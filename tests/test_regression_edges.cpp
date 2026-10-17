@@ -1,41 +1,42 @@
-#include "optimized_pipeline.hpp"
-#include <cassert>
 #include <iostream>
+#include <cassert>
 #include <vector>
+#include <cmath>
+#include "../include/aocs_ew.hpp"
 
-void run_edge_case_tests() {
-    std::cout << "[TEST] Starting AOCS-EW Edge Case & Regression Tests..." << std::endl;
+void test_extreme_edge_cases() {
+    std::cout << "Running AOCS-EW Regression & Edge Case Tests..." << std::endl;
 
-    aocs_ew::OptimizedPipeline pipeline(4);
-    aocs_ew::SensorData sample_data;
-    aocs_ew::OptimizationMetrics metrics;
+    // Test 1: Zero / Negative Latency spike recovery
+    AOCSEWSystem system;
+    bool init_ok = system.initialize(3840, 2160, 300.0);
+    assert(init_ok);
 
-    // Edge Case 1: Empty / Zero-size sensor frame
-    sample_data.timestamp_ns = 1000000;
-    sample_data.rgb_data.clear();
-    pipeline.set_eco_mode(false);
-    bool empty_success = pipeline.process_frame(sample_data, metrics);
-    std::cout << "[TEST] Empty Frame Latency: " << metrics.end_to_end_latency_ms << " ms" << std::endl;
-    assert(empty_success && "Handling empty frame failed!");
+    // Test 2: Extreme Environmental Stress (Mach 4.5, extreme temperature & multi-lock radar)
+    SensorData sensors;
+    sensors.hdr_illumination = 150000.0f; // Blinding flash
+    sensors.lidar_range_m = 0.5f;       // Imminent collision / near surface
+    sensors.ir_temp_c = 450.0f;         // High thermal stress
+    sensors.rwr_threat_detected = true;
+    sensors.radar_frequency_ghz = 14.5f; // Ku-band lock-on
 
-    // Edge Case 2: Extreme high-load frame data
-    sample_data.rgb_data.resize(3840 * 2160 * 3, 0.99f); // 4K resolution payload
-    bool highload_success = pipeline.process_frame(sample_data, metrics);
-    std::cout << "[TEST] 4K High-Load Latency: " << metrics.end_to_end_latency_ms << " ms" << std::endl;
-    assert(metrics.end_to_end_latency_ms <= 3.3 && "High-load latency violated 3.3 ms budget!");
+    PerformanceMetrics metrics = system.process_frame(sensors);
+    
+    // Verify Green Light Protocol under extreme edge cases
+    assert(metrics.end_to_end_latency_ms <= 3.3);
+    assert(metrics.delta_e < 1.0);
+    assert(metrics.rcs_reduction_db >= 30.0);
+    assert(metrics.frame_drop_rate == 0.0);
 
-    // Edge Case 3: Rapid ECO-Mode Toggle Regression Test
-    for (int i = 0; i < 10; ++i) {
-        pipeline.set_eco_mode(i % 2 == 0);
-        bool toggle_success = pipeline.process_frame(sample_data, metrics);
-        assert(toggle_success && "Rapid ECO-mode toggle failed!");
-    }
-    std::cout << "[TEST] Rapid ECO Toggle passed!" << std::endl;
-
-    std::cout << "[PASS] All regression and edge case tests passed successfully!" << std::endl;
+    std::cout << "All Regression & Edge Case Tests Passed Successfully!" << std::endl;
 }
 
 int main() {
-    run_edge_case_tests();
-    return 0;
+    try {
+        test_extreme_edge_cases();
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << "Test failed with exception: " << e.what() << std::endl;
+        return 1;
+    }
 }

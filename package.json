@@ -1,0 +1,10 @@
+{
+  "name": "aocs-ew-system",
+  "version": "1.0.0",
+  "description": "Advanced Active Camouflage & Electronic Warfare System (AOCS-EW)",
+  "scripts": {
+    "build": "g++ -std=c++20 -O3 src/optimized_pipeline.cpp tests/test_aocs_ew_regression.cpp -o build_test_regression && g++ -std=c++20 -O3 src/optimized_pipeline.cpp tests/test_edge_cases.cpp -o build_test_edge && g++ -std=c++20 -O3 src/optimized_pipeline.cpp tests/test_performance.cpp -o build_test_perf",
+    "test": "./build_test_regression && ./build_test_edge && ./build_test_perf",
+    "smoke": "python3 -c \"import subprocess; res = subprocess.run(['./build_test_regression'], capture_output=True); print(res.stdout.decode()); assert res.returncode == 0\""
+  }
+}

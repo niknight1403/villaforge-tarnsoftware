@@ -1,0 +1,6 @@
+{
+  "version": "1.0.0",
+  "build": "python3 scripts/guard_tests.py",
+  "test": "python3 scripts/guard_tests.py",
+  "smoke": "python3 scripts/guard_tests.py"
+}
